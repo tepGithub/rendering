@@ -1,0 +1,16 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "configure-debug",
+            "description": "Configure Debug for project",
+            "hidden": false,
+            "generator": "Visual Studio 16 2019",
+            "binaryDir": "${workspaceFolder}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+            }
+        }
+    ]
+}
