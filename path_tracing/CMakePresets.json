@@ -2,15 +2,27 @@
     "version": 3,
     "configurePresets": [
         {
-            "name": "configure-debug",
-            "description": "Configure Debug for project",
+            "name": "vs2019-configure",
+            "description": "Configure VS2019 for project",
             "hidden": false,
             "generator": "Visual Studio 16 2019",
-            "binaryDir": "${workspaceFolder}/build",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
-            }
+            "binaryDir": "build"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "vs2019-build-debug",
+            "description": "Build Debug configuration",
+            "displayName": "Debug",
+            "configurePreset": "vs2019-configure",
+            "configuration": "Debug"
+        },
+        {
+            "name": "vs2019-build-release",
+            "description": "Build Release configuration",
+            "displayName": "Release",
+            "configurePreset": "vs2019-configure",
+            "configuration": "Release"
         }
     ]
 }

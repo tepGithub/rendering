@@ -5,6 +5,8 @@
 #include "Math/Vector.h"
 using namespace Math;
 
+#include <iostream>
+
 struct Tri
 {
     float3 vertex0;
@@ -65,6 +67,8 @@ int main()
     float3 p0( -1, 1, -15 ), p1( 1, 1, -15 ), p2( -1, -1, -15 );
     Ray ray;
     
+    Timer timer;
+
     for (uint32_t y = 0; y < img.height; y++)
     {
         for (uint32_t x = 0; x < img.width; x++)
@@ -87,6 +91,9 @@ int main()
             }
         }
     }
+
+    int64_t durationMs = timer.duration();
+    std::cout << "elapsed in " << durationMs << " ms.\n";
 
     img.save("output.png");
 
