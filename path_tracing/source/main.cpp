@@ -1,19 +1,11 @@
-// https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
 #include "Image/Image.h"
+#include "BVH.h"
 #include "Util.h"
 
 #include "Math/Vector.h"
 using namespace Math;
 
 #include <iostream>
-
-struct Tri
-{
-    float3 vertex0;
-    float3 vertex1;
-    float3 vertex2;
-    float3 centroi;
-};
 
 struct Ray
 {
@@ -25,7 +17,7 @@ struct Ray
 static constexpr uint32_t kTriCount = 64;
 Tri tris[kTriCount];
 
-static void init()
+static void initScene()
 {
     for (Tri& tri : tris)
     {
@@ -36,6 +28,12 @@ static void init()
         tri.vertex1 = tri.vertex0 + r1;
         tri.vertex2 = tri.vertex0 + r2;
     }
+}
+
+static void buildBVH()
+{
+    for (Tri& tri : tris)
+        tri.centroid = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 }
 
 // https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
@@ -57,9 +55,33 @@ void IntersectTri( Ray& ray, const Tri& tri, const float kEpsilon = 0.0001f)
     if (t > kEpsilon) ray.t = min( ray.t, t );
 }
 
+void printRayPerSecond(uint32_t rayCount, int64_t durationMs)
+{
+    double rps = double(rayCount) * 1000.0 / double(durationMs);    
+    if (rps < 1e3)
+    {
+        std::cout << rps << " rays/sec\n";
+    }
+    else if (rps < 1e6)
+    {
+        std::cout << rps / 1e3 << " Krays/sec\n";
+    }
+    else if (rps < 1e9)
+    {
+        std::cout << rps / 1e6 << " Mrays/sec\n";
+    }
+    else
+    {
+        std::cout << rps / 1e9 << " Grays/sec\n";
+    }
+}
+
 int main()
 {
-    init();
+    initScene();
+
+    // construct BVH
+    BVH bvh(tris, kTriCount);
 
     Image img(640, 640);
 
@@ -94,6 +116,8 @@ int main()
 
     int64_t durationMs = timer.duration();
     std::cout << "elapsed in " << durationMs << " ms.\n";
+
+    printRayPerSecond(img.width * img.height, durationMs);
 
     img.save("output.png");
 

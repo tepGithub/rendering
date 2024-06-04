@@ -14,14 +14,17 @@ set(HEADERS
     source/Math/Numbers.h
     source/Math/Vector.h
 
+    source/BVH.h
     source/Util.h
 )
 
 set(SOURCES
     source/Image/Image.cpp
 
-    source/main.cpp
+    source/BVH.cpp
     source/Util.cpp
+
+    source/main.cpp
 )
 
 target_sources(path_tracing PRIVATE ${SOURCES} ${HEADERS})

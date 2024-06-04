@@ -83,6 +83,11 @@ namespace Math
 	template <class T> constexpr bool operator==(const vec<T, 2>& lhs, const vec<T, 2>& rhs) { return lhs[0] == rhs[0] && lhs[1] == rhs[1]; }
 	template <class T> constexpr bool operator!=(const vec<T, 2>& lhs, const vec<T, 2>& rhs) { return lhs[0] != rhs[0] || lhs[1] != rhs[1]; }
 
+	template <class T> constexpr auto min(const vec<T, 2>& a, const vec<T, 2>& b) { return vec<T, 2>(min(a[0], b[0]), min(a[1], b[1])); }
+	template <class T> constexpr auto max(const vec<T, 2>& a, const vec<T, 2>& b) { return vec<T, 2>(max(a[0], b[0]), max(a[1], b[1])); }
+	template <class T> constexpr auto min3(const vec<T, 2>& a, const vec<T, 2>& b, const vec<T, 2>& c) { return vec<T, 2>(min3(a[0], b[0], c[0]), min3(a[1], b[1], c[1])); }
+	template <class T> constexpr auto max3(const vec<T, 2>& a, const vec<T, 2>& b, const vec<T, 2>& c) { return vec<T, 2>(max3(a[0], b[0], c[0]), max3(a[1], b[1], c[1])); }
+
 	template <class T>
 	struct vec<T, 3>
 	{
@@ -141,11 +146,17 @@ namespace Math
 	template <class T> constexpr auto operator *(T                lhs, const vec<T, 3>& rhs) { return vec<T, 3>(lhs    * rhs[0], lhs    * rhs[1], lhs    * rhs[2]); }
 	template <class T> constexpr auto operator *(const vec<T, 3>& lhs, T                rhs) { return vec<T, 3>(lhs[0] * rhs   , lhs[1] * rhs   , lhs[2] * rhs   ); }
 	template <class T> constexpr auto operator /(const vec<T, 3>& lhs, const vec<T, 3>& rhs) { return vec<T, 3>(lhs[0] / rhs[0], lhs[1] / rhs[1], lhs[2] / rhs[2]); }
+	template <class T> constexpr auto operator /(T                lhs, const vec<T, 3>& rhs) { return vec<T, 3>(lhs    / rhs[0], lhs    / rhs[1], lhs    / rhs[2]); }
+	template <class T> constexpr auto operator /(const vec<T, 3>& lhs, T                rhs) { return vec<T, 3>(lhs[0] / rhs   , lhs[1] / rhs   , lhs[2] / rhs   ); }
 
 	// Relational binary operators (==, !=)
 	template <class T> constexpr bool operator==(const vec<T, 3>& lhs, const vec<T, 3>& rhs) { return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2]; }
 	template <class T> constexpr bool operator!=(const vec<T, 3>& lhs, const vec<T, 3>& rhs) { return lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2]; }
 
+	template <class T> constexpr auto min(const vec<T, 3>& a, const vec<T, 3>& b) { return vec<T, 3>(min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2])); }
+	template <class T> constexpr auto max(const vec<T, 3>& a, const vec<T, 3>& b) { return vec<T, 3>(max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2])); }
+	template <class T> constexpr auto min3(const vec<T, 3>& a, const vec<T, 3>& b, const vec<T, 3>& c) { return vec<T, 3>(min3(a[0], b[0], c[0]), min3(a[1], b[1], c[1]), min3(a[2], b[2], c[2])); }
+	template <class T> constexpr auto max3(const vec<T, 3>& a, const vec<T, 3>& b, const vec<T, 3>& c) { return vec<T, 3>(max3(a[0], b[0], c[0]), max3(a[1], b[1], c[1]), max3(a[2], b[2], c[2])); }
 
 	template <class T>
 	struct vec<T, 4>
@@ -209,6 +220,11 @@ namespace Math
 	// Relational binary operators (==, !=)
 	template <class T> constexpr bool operator==(const vec<T, 4>& lhs, const vec<T, 4>& rhs) { return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2] && lhs[3] == rhs[3]; }
 	template <class T> constexpr bool operator!=(const vec<T, 4>& lhs, const vec<T, 4>& rhs) { return lhs[0] != rhs[0] || lhs[1] != rhs[1] || lhs[2] != rhs[2] || lhs[3] != rhs[3]; }
+
+	template <class T> constexpr auto min(const vec<T, 4>& a, const vec<T, 4>& b) { return vec<T, 4>(min(a[0], b[0]), min(a[1], b[1]), min(a[2], b[2]), min(a[3], b[3])); }
+	template <class T> constexpr auto max(const vec<T, 4>& a, const vec<T, 4>& b) { return vec<T, 4>(max(a[0], b[0]), max(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])); }
+	template <class T> constexpr auto min3(const vec<T, 4>& a, const vec<T, 4>& b, const vec<T, 4>& c) { return vec<T, 4>(min3(a[0], b[0], c[0]), min3(a[1], b[1], c[1]), min3(a[2], b[2], c[2]), min3(a[3], b[3], c[3])); }
+	template <class T> constexpr auto max3(const vec<T, 4>& a, const vec<T, 4>& b, const vec<T, 4>& c) { return vec<T, 4>(max3(a[0], b[0], c[0]), max3(a[1], b[1], c[1]), max3(a[2], b[2], c[2]), max3(a[3], b[3], c[3])); }
 
 	// Aliases
 

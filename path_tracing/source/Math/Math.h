@@ -17,16 +17,26 @@ namespace Math
 		return 1.0f / f;
 	}
 
-	inline float min(const float& f1, const float& f2)
+	inline float min(float f1, float f2)
 	{
 		// fsel((f2 - f1), f1, f2);
 		return (f1 <= f2) ? f1 : f2;
+	}
+
+	inline float min3(float f1, float f2, float f3)
+	{
+		return min(f1, min(f2, f3));
 	}
 
 	inline float max(float f1, float f2)
 	{
 		// fsel((f1 - f2), f1, f2)
 		return (f1 >= f2) ? f1 : f2;
+	}
+
+	inline float max3(float f1, float f2, float f3)
+	{
+		return max(f1, max(f2, f3));
 	}
 
 	inline float clamp(float f, float _fmin, float _fmax)
