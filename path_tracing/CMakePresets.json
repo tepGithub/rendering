@@ -7,6 +7,13 @@
             "hidden": false,
             "generator": "Visual Studio 16 2019",
             "binaryDir": "build"
+        },
+        {
+            "name": "xcode-configure",
+            "description": "Configure Xcode for project",
+            "hidden": false,
+            "generator": "Xcode",
+            "binaryDir": "build"
         }
     ],
     "buildPresets": [
@@ -22,6 +29,20 @@
             "description": "Build Release configuration",
             "displayName": "Release",
             "configurePreset": "vs2019-configure",
+            "configuration": "Release"
+        },
+        {
+            "name": "xcode-build-debug",
+            "description": "Build Debug configuration",
+            "displayName": "Debug",
+            "configurePreset": "xcode-configure",
+            "configuration": "Debug"
+        },
+        {
+            "name": "xcode-build-release",
+            "description": "Build Release configuration",
+            "displayName": "Release",
+            "configurePreset": "xcode-configure",
             "configuration": "Release"
         }
     ]

@@ -1,4 +1,5 @@
 #include "BVH.h"
+#include "Math/Intersect.h"
 #include <cassert>
 using namespace Math;
 
@@ -85,9 +86,9 @@ static uint32_t computeMaxNodeCount(uint32_t N)
 // BVH
 ///////////////////////////////////////////////////////////////////////////////
 
-BVH::BVH(const Item* items, uint32_t itemCount)
+BVH::BVH(const Item* items, uint32_t _itemCount)
     : items(items)
-    , itemCount(itemCount)
+    , itemCount(_itemCount)
 {
     // items
     itemRefs.resize(itemCount);
@@ -104,9 +105,7 @@ BVH::BVH(const Item* items, uint32_t itemCount)
     rootNodeIndex = allocNode();
 
     BVHNode& root = nodePool[rootNodeIndex];
-    root.firstChild = 0;
-    root.firstItemRef = 0;
-    root.itemCount = itemCount;
+    root.initLeafNode(0, itemCount);
 
     updateNodeBounds(root);
 
@@ -117,8 +116,8 @@ BVH::BVH(const Item* items, uint32_t itemCount)
 // returns number of item in partition0
 uint32_t BVH::partitionItems(BVHNode& node, int axis, float splitPos)
 {
-    uint32_t i = node.firstItemRef;
-    uint32_t j = node.firstItemRef + node.itemCount - 1;
+    int i = node.firstItemRef();
+    int j = node.firstItemRef() + node.itemCount - 1;
     while (i <= j)
     {
         if (getItem(i).centroid[axis] < splitPos)
@@ -131,7 +130,7 @@ uint32_t BVH::partitionItems(BVHNode& node, int axis, float splitPos)
             j--;
         }
     }
-    return (i - node.firstItemRef);
+    return (i - node.firstItemRef());
 }
 
 
@@ -139,13 +138,13 @@ void BVH::updateNodeBounds(BVHNode& node)
 {
     assert(node.itemCount > 0);
     {
-        const Item& item = getItem(node.firstItemRef);
+        const Item& item = getItem(node.firstItemRef());
         node.aabbMin = getAabbMin(item);
         node.aabbMax = getAabbMax(item);
     }
     for (uint32_t i=1; i<node.itemCount; i++)
     {
-        const Item& item = getItem(node.firstItemRef + i);
+        const Item& item = getItem(node.firstItemRef() + i);
         node.aabbMin = min(node.aabbMin, getAabbMin(item));
         node.aabbMax = max(node.aabbMax, getAabbMax(item));
     }
@@ -165,26 +164,44 @@ void BVH::subdivideNode(BVHNode& node)
     if (childItemCount0 == 0 || childItemCount0 == node.itemCount)
         return;
 
+    assert(node.isLeaf());
+
     // create child nodes
     uint32_t childIndex0 = allocNode();
     BVHNode& child0 = nodePool[childIndex0];
-    child0.firstChild = 0;
-    child0.firstItemRef = node.firstItemRef;
-    child0.itemCount = childItemCount0;
+    child0.initLeafNode(node.firstItemRef(), childItemCount0);
     updateNodeBounds(child0);
 
     uint32_t childIndex1 = allocNode();
     BVHNode& child1 = nodePool[childIndex1];
-    child1.firstChild = 0;
-    child1.firstItemRef = node.firstItemRef + childItemCount0;
-    child1.itemCount = node.itemCount - childItemCount0;
+    child1.initLeafNode(node.firstItemRef() + childItemCount0, node.itemCount - childItemCount0);
     updateNodeBounds(child1);
 
     // update current node
     assert(childIndex1 == childIndex0 + 1);
-    node.firstChild = childIndex0;
-    node.itemCount = 0;
+    node.initInternalNode(childIndex0);
 
     subdivideNode(child0);
     subdivideNode(child1);
+}
+
+void BVH::intersect(Math::Ray& ray, BVHNode& node)
+{
+    if (!intersectRayAabb(ray, node.aabbMin, node.aabbMax))
+        return;
+
+    if (node.isLeaf())
+    {
+        for (uint32_t i=0; i<node.itemCount; i++)
+        {
+            const Item& item = getItem(node.firstItemRef() + i);
+            intersectRayTri(ray, item);
+        }
+    }
+    else
+    {
+        static_assert(BVHNode::kChildCount == 2);
+        intersect(ray, nodePool[node.firstChild()]);
+        intersect(ray, nodePool[node.firstChild() + 1]);
+    } 
 }

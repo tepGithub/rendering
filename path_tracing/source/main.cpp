@@ -2,17 +2,10 @@
 #include "BVH.h"
 #include "Util.h"
 
-#include "Math/Vector.h"
+#include "Math/Intersect.h"
 using namespace Math;
 
 #include <iostream>
-
-struct Ray
-{
-    float3 O;
-    float3 D;
-    float t = 1e30f;
-};
 
 static constexpr uint32_t kTriCount = 64;
 Tri tris[kTriCount];
@@ -27,32 +20,8 @@ static void initScene()
         tri.vertex0 = r0 * 9.0f - float3( 5.0f );
         tri.vertex1 = tri.vertex0 + r1;
         tri.vertex2 = tri.vertex0 + r2;
-    }
-}
-
-static void buildBVH()
-{
-    for (Tri& tri : tris)
         tri.centroid = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
-}
-
-// https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-void IntersectTri( Ray& ray, const Tri& tri, const float kEpsilon = 0.0001f)
-{
-    const float3 edge1 = tri.vertex1 - tri.vertex0;
-    const float3 edge2 = tri.vertex2 - tri.vertex0;
-    const float3 h = cross( ray.D, edge2 );
-    const float a = dot( edge1, h );
-    if (a > -kEpsilon && a < kEpsilon) return; // ray parallel to triangle
-    const float f = 1 / a;
-    const float3 s = ray.O - tri.vertex0;
-    const float u = f * dot( s, h );
-    if (u < 0 || u > 1) return;
-    const float3 q = cross( s, edge1 );
-    const float v = f * dot( ray.D, q );
-    if (v < 0 || u + v > 1) return;
-    const float t = f * dot( edge2, q );
-    if (t > kEpsilon) ray.t = min( ray.t, t );
+    }
 }
 
 void printRayPerSecond(uint32_t rayCount, int64_t durationMs)
@@ -77,7 +46,7 @@ void printRayPerSecond(uint32_t rayCount, int64_t durationMs)
 }
 
 int main()
-{
+{    
     initScene();
 
     // construct BVH
@@ -98,12 +67,16 @@ int main()
             float3 pixelPos = p0 + (p1 - p0) * (x / 640.0f) + (p2 - p0) * (y / 640.0f);
             ray.O = camPos;
             ray.D = normalize( pixelPos - ray.O );
-            ray.t = 1e30f;
+            ray.t = Ray::kInf;
 
+        #if 1
+            bvh.intersect(ray);
+        #else
             for( int i = 0; i < kTriCount; i++ )
-                IntersectTri( ray, tris[i] );
+                intersectRayTri( ray, tris[i] );
+        #endif
 
-            if (ray.t < 1e30f)
+            if (ray.t < Ray::kInf)
             {
                 img(x, y) = colors::white();
             }

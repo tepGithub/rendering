@@ -4,41 +4,47 @@
 
 #pragma once
 
-#include "Math/Vector.h"
+#include "Math/Ray.h"
+#include "Math/Tri.h"
 #include <vector>
 
-///////////////////////////////////////////////////////////////////////////////
-// Item
-///////////////////////////////////////////////////////////////////////////////
-
-struct Tri
-{
-    Math::float3 vertex0;
-    Math::float3 vertex1;
-    Math::float3 vertex2;
-    Math::float3 centroid;
-};
-
 
 ///////////////////////////////////////////////////////////////////////////////
-// Item
+// Node
 ///////////////////////////////////////////////////////////////////////////////
 
 struct BVHNode
 {
     static constexpr uint32_t kChildCount = 2;
 
-    Math::float3 aabbMin;       // 12 bytes
-    Math::float3 aabbMax;       // 12 bytes
-    uint32_t firstChild;        // 4 bytes
-    uint32_t firstItemRef;      // 4 bytes
-    uint32_t itemCount;         // 4 bytes
+    Math::float3 aabbMin;           // 12 bytes
+    Math::float3 aabbMax;           // 12 bytes
+private:
+    uint32_t firstChildOrItemRef;   // 4 bytes
+public:
+    uint32_t itemCount;             // 4 bytes
+
+    void initLeafNode(uint32_t firstItemRef, uint32_t count)
+    {
+        firstChildOrItemRef = firstItemRef;
+        itemCount = count;
+    }
+    void initInternalNode(uint32_t firstChild)
+    {
+        firstChildOrItemRef = firstChild;
+        itemCount = 0;
+    }
+
+    bool isLeaf() const { return itemCount > 0; }
+    uint32_t firstChild() const { assert(!isLeaf()); return firstChildOrItemRef; }
+    uint32_t firstItemRef() const { assert(isLeaf()); return firstChildOrItemRef; }
 };
+static_assert(sizeof(BVHNode) == 32);
 
 class BVH
 {
 public:
-    using Item = Tri;
+    using Item = Math::Tri;
 
 private:
     using ItemRefs = std::vector<uint32_t>;
@@ -55,12 +61,16 @@ private:
     // nodes
     NodePool nodePool;
     uint32_t rootNodeIndex;
-    uint32_t nodeCount;
+    //uint32_t nodeCount;
 
     uint32_t allocNode() { uint32_t nodeIndex = uint32_t(nodePool.size()); nodePool.emplace_back(); return nodeIndex; }
     void updateNodeBounds(BVHNode& node);    
     void subdivideNode(BVHNode& node);
 
+    void intersect(Math::Ray& ray, BVHNode& node);
+
 public:
     BVH(const Item* items, uint32_t itemCount);
+
+    void intersect(Math::Ray& ray) { intersect(ray, nodePool[rootNodeIndex]); }
 };

@@ -10,8 +10,11 @@ set(HEADERS
     source/Image/stb_image_write.h
 
     source/Math/Color.h
+    source/Math/Intersect.h
     source/Math/Math.h
     source/Math/Numbers.h
+    source/Math/Ray.h
+    source/Math/Tri.h
     source/Math/Vector.h
 
     source/BVH.h
