@@ -5,13 +5,20 @@
 #include "Math/Intersect.h"
 using namespace Math;
 
+#include <cstdio>
 #include <iostream>
 
-static constexpr uint32_t kTriCount = 64;
-Tri tris[kTriCount];
+#define USE_BVH
+
+//#define SCENE_USE_RANDOMIZED_TRIANGLE
+#define SCENE_USE_UNITY_ROBOLAB
+
+std::vector<Tri> tris;
 
 static void initScene()
 {
+#ifdef SCENE_USE_RANDOMIZED_TRIANGLE
+    tris.resize(1024);
     for (Tri& tri : tris)
     {
         float3 r0( RandomFloat(), RandomFloat(), RandomFloat() );
@@ -20,6 +27,26 @@ static void initScene()
         tri.vertex0 = r0 * 9.0f - float3( 5.0f );
         tri.vertex1 = tri.vertex0 + r1;
         tri.vertex2 = tri.vertex0 + r2;
+    }
+#endif
+
+#ifdef SCENE_USE_UNITY_ROBOLAB
+    tris.resize(12582);
+    FILE* file = fopen("../../assets/unity.tri", "r");
+    float a, b, c, d, e, f, g, h, i;
+    for (Tri& tri : tris)
+    {
+        fscanf(file, "%f %f %f %f %f %f %f %f %f\n", &a, &b, &c, &d, &e, &f, &g, &h, &i);
+        tri.vertex0 = float3( a, b, c );
+        tri.vertex1 = float3( d, e, f );
+        tri.vertex2 = float3( g, h, i );
+    }
+    fclose(file);
+#endif
+
+    // compute centroid
+    for (Tri& tri : tris)
+    {
         tri.centroid = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
     }
 }
@@ -50,7 +77,7 @@ int main()
     initScene();
 
     // construct BVH
-    BVH bvh(tris, kTriCount);
+    BVH bvh(tris.data(), uint32_t(tris.size()));
 
     Image img(640, 640);
 
@@ -69,11 +96,11 @@ int main()
             ray.D = normalize( pixelPos - ray.O );
             ray.t = Ray::kInf;
 
-        #if 1
+        #ifdef USE_BVH
             bvh.intersect(ray);
         #else
-            for( int i = 0; i < kTriCount; i++ )
-                intersectRayTri( ray, tris[i] );
+            for (const Tri& tri : tris)
+                intersectRayTri(ray, tri);
         #endif
 
             if (ray.t < Ray::kInf)
