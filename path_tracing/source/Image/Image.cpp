@@ -9,13 +9,20 @@
 Image::Image(uint32_t width, uint32_t height)
     : width(width)
     , height(height)
-    , pixels(new Math::color3b[width * height])
+    , pixels(new Pixel[width * height])
 {    
 }
 
 Image::~Image()
 {
     delete [] pixels;    
+}
+
+void Image::clear(const Pixel& clearValue)
+{
+    uint32_t pixelCount = width * height;
+    for (uint32_t i=0; i<pixelCount; i++)
+        pixels[i] = clearValue;
 }
 
 void Image::save(const char* filepath)

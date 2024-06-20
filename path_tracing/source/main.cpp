@@ -80,9 +80,21 @@ int main()
     BVH bvh(tris.data(), uint32_t(tris.size()));
 
     Image img(640, 640);
+    img.clear(colors::black());
 
+#ifdef SCENE_USE_RANDOMIZED_TRIANGLE    
     float3 camPos( 0, 0, -18 );
-    float3 p0( -1, 1, -15 ), p1( 1, 1, -15 ), p2( -1, -1, -15 );
+    float3 p0( -1, 1, -15 );
+    float3 p1( 1, 1, -15 );
+    float3 p2( -1, -1, -15 );
+#endif
+#ifdef SCENE_USE_UNITY_ROBOLAB
+    float3 camPos( -1.5f, -0.2f, -2.5f );
+    float3 p0( -2.5f, 0.8f, -0.5f );
+    float3 p1( -0.5f, 0.8f, -0.5f );
+    float3 p2( -2.5f, -1.2f, -0.5f );
+#endif
+
     Ray ray;
     
     Timer timer;
@@ -91,7 +103,7 @@ int main()
     {
         for (uint32_t x = 0; x < img.width; x++)
         {
-            float3 pixelPos = p0 + (p1 - p0) * (x / 640.0f) + (p2 - p0) * (y / 640.0f);
+            float3 pixelPos = p0 + (p1 - p0) * (x / float(img.width)) + (p2 - p0) * (y / float(img.height));
             ray.O = camPos;
             ray.D = normalize( pixelPos - ray.O );
             ray.t = Ray::kInf;
@@ -105,11 +117,10 @@ int main()
 
             if (ray.t < Ray::kInf)
             {
-                img(x, y) = colors::white();
-            }
-            else
-            {
-                img(x, y) = colors::black();
+                // depth as color
+                uint8_t d = uint8_t(saturate(1.0f - ray.t / 4.0f) * 255.0f);
+                
+                img(x, y) = color3b(d);
             }
         }
     }
