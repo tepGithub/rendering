@@ -3,37 +3,6 @@
 #include <cassert>
 using namespace Math;
 
-///////////////////////////////////////////////////////////////////////////////
-// Utils
-///////////////////////////////////////////////////////////////////////////////
-
-// NOTE: this isn't the same as longestAxis
-static uint32_t maxAxis(float3 v)
-{
-    if (v.x > v.y)
-    {
-        if (v.x > v.z)
-        {
-            return 0;   // v.x            
-        }
-        else
-        {
-            return 2;   // v.z
-        }
-    }
-    else
-    {
-        if (v.y > v.z)
-        {
-            return 1;   // v.y
-        }
-        else
-        {
-            return 2;   // v.z
-        }
-    }
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Item
@@ -51,22 +20,45 @@ static float3 getAabbMax(const BVH::Item& item)
 // Nodes
 ///////////////////////////////////////////////////////////////////////////////
 
+float BVH::evaluateSAH(const BVHNode& node, Math::CoordAxis axis, float splitPos)
+{
+    return 0.0;
+}
+
 // axis=0 means split plane: x=value
-struct SplitPlane
+void BVH::computeSplitPlane(const BVHNode& node, CoordAxis* outAxis, float* outSplitPos)
 {
-    uint32_t axis;
-    float value;
-};
+#if 1
+    CoordAxis bestAxis = CoordAxis_Count;
+    float bestPos = 0.0f;
+    float bestCost = 1e30f;
 
-static SplitPlane computeSplitPlane(const BVHNode& node)
-{
+    for (uint8_t axisIndex = 0; axisIndex < CoordAxis_Count; axisIndex++)
+    {
+        CoordAxis axis = CoordAxis(axisIndex);
+        for (uint32_t i=0; i<node.itemCount; i++)
+        {
+            const Item& item = getItem(node.firstItemRef() + i);
+            float candidatePos = item.centroid[axis];
+            float cost = evaluateSAH(node, axis, candidatePos);
+            if (cost < bestCost)
+            {
+                bestPos = candidatePos;
+                bestAxis = axis;
+                bestCost = cost;
+            }
+        }
+    }
+
+    *outAxis = bestAxis;
+    *outSplitPos = bestPos;
+#else
     float3 extent = node.aabbMax - node.aabbMin;
-    uint32_t axis = maxAxis(extent);
+    CoordAxis axis = maxAxis(extent);
 
-    SplitPlane splane;
-    splane.axis = axis;
-    splane.value = node.aabbMin[axis] + extent[axis] * 0.5f;
-    return splane;
+    *outAxis = axis;
+    *outSplitPos = node.aabbMin[axis] + extent[axis] * 0.5f;
+#endif
 }
 
 // Worst case number of BVHNode for N items are simply: 2N - 1 (sum the nodes of full binary tree)
@@ -114,7 +106,7 @@ BVH::BVH(const Item* items, uint32_t _itemCount)
 
 // partition items in node into two partition: partition0 and partition1.
 // returns number of item in partition0
-uint32_t BVH::partitionItems(BVHNode& node, int axis, float splitPos)
+uint32_t BVH::partitionItems(BVHNode& node, Math::CoordAxis axis, float splitPos)
 {
     int i = node.firstItemRef();
     int j = node.firstItemRef() + node.itemCount - 1;
@@ -156,9 +148,11 @@ void BVH::subdivideNode(BVHNode& node)
     if (node.itemCount <= 2)
         return;
 
-    SplitPlane splane = computeSplitPlane(node);
+    CoordAxis splitAxis;
+    float splitPos;
+    computeSplitPlane(node, &splitAxis, &splitPos);
 
-    uint32_t childItemCount0 = partitionItems(node, splane.axis, splane.value);
+    uint32_t childItemCount0 = partitionItems(node, splitAxis, splitPos);
     
     // we don't need to subdivide if any of the partitions is empty
     if (childItemCount0 == 0 || childItemCount0 == node.itemCount)

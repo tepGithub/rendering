@@ -119,8 +119,9 @@ int main()
             {
                 // depth as color
                 uint8_t d = uint8_t(saturate(1.0f - ray.t / 4.0f) * 255.0f);
-                
                 img(x, y) = color3b(d);
+
+                //img(x, y) = colors::white();
             }
         }
     }

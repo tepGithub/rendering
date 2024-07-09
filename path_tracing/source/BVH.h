@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Math/Axis.h"
 #include "Math/Ray.h"
 #include "Math/Tri.h"
 #include <vector>
@@ -57,7 +58,9 @@ private:
     uint32_t itemCount;
 
     const Item& getItem(uint32_t itemRefIndex) { return items[itemRefs[itemRefIndex]]; }
-    uint32_t partitionItems(BVHNode& node, int axis, float splitPos);
+    float evaluateSAH(const BVHNode& node, Math::CoordAxis axis, float splitPos);
+    void computeSplitPlane(const BVHNode& node, Math::CoordAxis* outAxis, float* outSplitPos);    
+    uint32_t partitionItems(BVHNode& node, Math::CoordAxis axis, float splitPos);
 
     // nodes
     NodePool nodePool;
