@@ -1,4 +1,5 @@
 #include "BVH.h"
+#include "Math/Aabb.h"
 #include "Math/Intersect.h"
 #include <cassert>
 using namespace Math;
@@ -22,11 +23,45 @@ static float3 getAabbMax(const BVH::Item& item)
 
 float BVH::evaluateSAH(const BVHNode& node, Math::CoordAxis axis, float splitPos)
 {
-    return 0.0;
+    Aabb leftBox;
+    Aabb rightBox;
+    int leftCount = 0;
+    int rightCount = 0;
+
+    for (uint32_t i=0; i<node.itemCount; i++)
+    {
+        const Item& item = getItem(node.firstItemRef() + i);
+        if (item.centroid[axis] < splitPos)
+        {
+            leftCount++;
+            leftBox.expand(item.vertex0);
+            leftBox.expand(item.vertex1);
+            leftBox.expand(item.vertex2);
+        }
+        else
+        {
+            rightCount++;
+            rightBox.expand(item.vertex0);
+            rightBox.expand(item.vertex1);
+            rightBox.expand(item.vertex2);
+        }
+    }
+
+    // Cost of making a partition:
+    //   C = C_trav + p_a * C_a + p_b * C_b
+    //
+    // C_trav is the cost of traversing an interior node (e.g. bounding box test)
+    // C_a and C_b are the costs of intersection with the resultant child subtrees
+    // p_a and p_b are the probability a ray intersects the bbox of the child nodes A and B
+
+    // Let's just simplify for now
+    float cost = leftCount * leftBox.area() + rightCount * rightBox.area();
+    assert(cost > 0.0f);
+    return cost;    
 }
 
 // axis=0 means split plane: x=value
-void BVH::computeSplitPlane(const BVHNode& node, CoordAxis* outAxis, float* outSplitPos)
+float BVH::computeSplitPlane(const BVHNode& node, CoordAxis* outAxis, float* outSplitPos)
 {
 #if 1
     CoordAxis bestAxis = CoordAxis_Count;
@@ -52,12 +87,14 @@ void BVH::computeSplitPlane(const BVHNode& node, CoordAxis* outAxis, float* outS
 
     *outAxis = bestAxis;
     *outSplitPos = bestPos;
+    return bestCost;
 #else
     float3 extent = node.aabbMax - node.aabbMin;
     CoordAxis axis = maxAxis(extent);
 
     *outAxis = axis;
     *outSplitPos = node.aabbMin[axis] + extent[axis] * 0.5f;
+    return 0.0f;
 #endif
 }
 
@@ -145,12 +182,18 @@ void BVH::updateNodeBounds(BVHNode& node)
 // subdivide
 void BVH::subdivideNode(BVHNode& node)
 {
-    if (node.itemCount <= 2)
-        return;
+    //if (node.itemCount <= 2)
+    //    return;
 
     CoordAxis splitAxis;
     float splitPos;
-    computeSplitPlane(node, &splitAxis, &splitPos);
+    float splitCost = computeSplitPlane(node, &splitAxis, &splitPos);
+
+    // if splitting doesn't improve, no need to subdivide
+    Aabb nodeAabb(node.aabbMin, node.aabbMax);
+    float nodeCost = node.itemCount * nodeAabb.area();    
+    if (splitCost >= nodeCost)
+        return;
 
     uint32_t childItemCount0 = partitionItems(node, splitAxis, splitPos);
     

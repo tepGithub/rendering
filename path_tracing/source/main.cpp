@@ -77,12 +77,16 @@ int main()
     initScene();
 
     // construct BVH
+    Timer buildBvhTimer;
+
     BVH bvh(tris.data(), uint32_t(tris.size()));
+
+    std::cout << "bvh construction: " << buildBvhTimer.duration() << " ms.\n";
 
     Image img(640, 640);
     img.clear(colors::black());
 
-#ifdef SCENE_USE_RANDOMIZED_TRIANGLE    
+#ifdef SCENE_USE_RANDOMIZED_TRIANGLE
     float3 camPos( 0, 0, -18 );
     float3 p0( -1, 1, -15 );
     float3 p1( 1, 1, -15 );
@@ -95,41 +99,43 @@ int main()
     float3 p2( -2.5f, -1.2f, -0.5f );
 #endif
 
-    Ray ray;
-    
-    Timer timer;
-
-    for (uint32_t y = 0; y < img.height; y++)
+    // Ray tracing
     {
-        for (uint32_t x = 0; x < img.width; x++)
+        Timer timer;
+
+        Ray ray;
+        for (uint32_t y = 0; y < img.height; y++)
         {
-            float3 pixelPos = p0 + (p1 - p0) * (x / float(img.width)) + (p2 - p0) * (y / float(img.height));
-            ray.O = camPos;
-            ray.D = normalize( pixelPos - ray.O );
-            ray.t = Ray::kInf;
-
-        #ifdef USE_BVH
-            bvh.intersect(ray);
-        #else
-            for (const Tri& tri : tris)
-                intersectRayTri(ray, tri);
-        #endif
-
-            if (ray.t < Ray::kInf)
+            for (uint32_t x = 0; x < img.width; x++)
             {
-                // depth as color
-                uint8_t d = uint8_t(saturate(1.0f - ray.t / 4.0f) * 255.0f);
-                img(x, y) = color3b(d);
+                float3 pixelPos = p0 + (p1 - p0) * (x / float(img.width)) + (p2 - p0) * (y / float(img.height));
+                ray.O = camPos;
+                ray.D = normalize( pixelPos - ray.O );
+                ray.t = Ray::kInf;
 
-                //img(x, y) = colors::white();
+            #ifdef USE_BVH
+                bvh.intersect(ray);
+            #else
+                for (const Tri& tri : tris)
+                    intersectRayTri(ray, tri);
+            #endif
+
+                if (ray.t < Ray::kInf)
+                {
+                    // depth as color
+                    uint8_t d = uint8_t(saturate(1.0f - ray.t / 4.0f) * 255.0f);
+                    img(x, y) = color3b(d);
+
+                    //img(x, y) = colors::white();
+                }
             }
         }
+
+        int64_t durationMs = timer.duration();
+        std::cout << "raytracing: " << durationMs << " ms.\n";
+
+        printRayPerSecond(img.width * img.height, durationMs);
     }
-
-    int64_t durationMs = timer.duration();
-    std::cout << "elapsed in " << durationMs << " ms.\n";
-
-    printRayPerSecond(img.width * img.height, durationMs);
 
     img.save("output.png");
 

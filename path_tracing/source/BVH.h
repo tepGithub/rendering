@@ -9,6 +9,7 @@
 #include "Math/Ray.h"
 #include "Math/Tri.h"
 #include <vector>
+#include <cassert>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,7 +60,7 @@ private:
 
     const Item& getItem(uint32_t itemRefIndex) { return items[itemRefs[itemRefIndex]]; }
     float evaluateSAH(const BVHNode& node, Math::CoordAxis axis, float splitPos);
-    void computeSplitPlane(const BVHNode& node, Math::CoordAxis* outAxis, float* outSplitPos);    
+    float computeSplitPlane(const BVHNode& node, Math::CoordAxis* outAxis, float* outSplitPos);    
     uint32_t partitionItems(BVHNode& node, Math::CoordAxis axis, float splitPos);
 
     // nodes
