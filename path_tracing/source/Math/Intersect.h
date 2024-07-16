@@ -25,7 +25,8 @@ inline void intersectRayTri(Ray& ray, const Tri& tri, const float kEpsilon = 0.0
     if (t > kEpsilon) ray.t = min( ray.t, t );
 }
 
-inline bool intersectRayAabb(const Ray& ray, const float3 bmin, const float3 bmax)
+// if result == kInf then it misses intersection
+inline float intersectRayAabb(const Ray& ray, const float3 bmin, const float3 bmax)
 {
     float tx1 = (bmin.x - ray.O.x) / ray.D.x, tx2 = (bmax.x - ray.O.x) / ray.D.x;
     float tmin = min( tx1, tx2 ), tmax = max( tx1, tx2 );
@@ -33,7 +34,7 @@ inline bool intersectRayAabb(const Ray& ray, const float3 bmin, const float3 bma
     tmin = max( tmin, min( ty1, ty2 ) ), tmax = min( tmax, max( ty1, ty2 ) );
     float tz1 = (bmin.z - ray.O.z) / ray.D.z, tz2 = (bmax.z - ray.O.z) / ray.D.z;
     tmin = max( tmin, min( tz1, tz2 ) ), tmax = min( tmax, max( tz1, tz2 ) );
-    return tmax >= tmin && tmin < ray.t && tmax > 0;
+    return (tmax >= tmin && tmin < ray.t && tmax > 0) ? tmin : Ray::kInf;
 }
 
 } // namespace Math

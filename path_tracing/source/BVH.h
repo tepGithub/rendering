@@ -77,5 +77,5 @@ private:
 public:
     BVH(const Item* items, uint32_t itemCount);
 
-    void intersect(Math::Ray& ray) { intersect(ray, nodePool[rootNodeIndex]); }
+    void intersect(Math::Ray& ray);
 };
