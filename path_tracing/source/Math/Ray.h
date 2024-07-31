@@ -10,7 +10,7 @@ namespace Math
 
         Math::float3 O;
         Math::float3 D;
-        float t = 1e30f;
+        float t = Ray::kInf;
     };
 
 } // namespace Math

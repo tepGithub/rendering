@@ -4,6 +4,7 @@
 #include <cassert>
 using namespace Math;
 
+static constexpr float kLargeNumber = 1e30f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Item
@@ -23,8 +24,8 @@ static float3 getAabbMax(const BVH::Item& item)
 
 float BVH::evaluateSAH(const BVHNode& node, Math::CoordAxis axis, float splitPos)
 {
-    Aabb leftBox;
-    Aabb rightBox;
+    Aabb leftBox(float3(kLargeNumber), float3(-kLargeNumber));
+    Aabb rightBox(float3(kLargeNumber), float3(-kLargeNumber));
     int leftCount = 0;
     int rightCount = 0;
 
@@ -245,21 +246,18 @@ void BVH::intersect(Math::Ray& ray, BVHNode& node)
 
 void BVH::intersect(Math::Ray& ray)
 {
-#if 0
+#if 1
     intersect(ray, nodePool[rootNodeIndex]);
-#elif 1
+#else
+    BVHNode* node = &nodePool[rootNodeIndex];
+
+    // check if we hit root node aabb at all
+    if (intersectRayAabb(ray, node->aabbMin, node->aabbMax) == Ray::kInf)
+        return;
+
     BVHNode* stack[64];
     uint32_t stackPtr = 0;
 
-    BVHNode& rootNode = nodePool[rootNodeIndex];
-    if (intersectRayAabb(ray, rootNode.aabbMin, rootNode.aabbMax) == Ray::kInf)
-        return;
-
-    // push root node
-    stack[stackPtr++] = &rootNode;
-
-    BVHNode* node = stack[--stackPtr];
-    
     while (1)
     {
         if (node->isLeaf())
@@ -269,7 +267,7 @@ void BVH::intersect(Math::Ray& ray)
                 const Item& item = getItem(node->firstItemRef() + i);
                 intersectRayTri(ray, item);
             }
-
+            
             if (stackPtr == 0)
                 break;
 
@@ -277,66 +275,12 @@ void BVH::intersect(Math::Ray& ray)
         }
         else
         {
-            static_assert(BVHNode::kChildCount == 2);
-
-            BVHNode& child0 = nodePool[node->firstChild()];
-            BVHNode& child1 = nodePool[node->firstChild() + 1];
-            float dist0 = intersectRayAabb(ray, child0.aabbMin, child0.aabbMax);
-            float dist1 = intersectRayAabb(ray, child1.aabbMin, child1.aabbMax);
-            if (dist0 > dist1)
-            {
-                std::swap(dist0, dist1);
-                std::swap(child0, child1);
-            }
-
-            if (dist1 != Ray::kInf)
-            {
-                stack[stackPtr++] = &child1;
-            }
-            if (dist0 != Ray::kInf)
-            {
-                stack[stackPtr++] = &child0;
-            }
-
-            if (stackPtr == 0)
-                break;
-
-            node = stack[--stackPtr];                
-        }
-    }
-#else
-    BVHNode& node = nodePool[rootNodeIndex];
-
-    // check if we hit root node aabb at all
-    if (intersectRayAabb(ray, node.aabbMin, node.aabbMax) == Ray::kInf)
-        return;
-
-    BVHNode* stack[64];
-    uint32_t stackPtr = 0;
-
-    while (1)
-    {
-        if (node.isLeaf())
-        {
-            for (uint32_t i=0; i<node.itemCount; i++)
-            {
-                const Item& item = getItem(node.firstItemRef() + i);
-                intersectRayTri(ray, item);
-            }
-            
-            if (stackPtr == 0)
-                break;
-
-            node = *stack[--stackPtr];
-        }
-        else
-        {
             // we want to traverse front front-to-back
             static_assert(BVHNode::kChildCount == 2);
-            BVHNode& child0 = nodePool[node.firstChild()];
-            BVHNode& child1 = nodePool[node.firstChild() + 1];
-            float dist0 = intersectRayAabb(ray, child0.aabbMin, child0.aabbMax);
-            float dist1 = intersectRayAabb(ray, child1.aabbMin, child1.aabbMax);
+            BVHNode* child0 = &nodePool[node->firstChild()];
+            BVHNode* child1 = &nodePool[node->firstChild() + 1];
+            float dist0 = intersectRayAabb(ray, child0->aabbMin, child0->aabbMax);
+            float dist1 = intersectRayAabb(ray, child1->aabbMin, child1->aabbMax);
 
             if (dist0 > dist1)
             {
@@ -349,12 +293,12 @@ void BVH::intersect(Math::Ray& ray)
             {
                 if (stackPtr == 0)
                     break;
-                node = *stack[--stackPtr];
+                node = stack[--stackPtr];
             }
             else
             {
                 node = child0;
-                if (dist1 != Ray::kInf) stack[stackPtr++] = &child1;
+                if (dist1 != Ray::kInf) stack[stackPtr++] = child1;
             }
         }
     }
