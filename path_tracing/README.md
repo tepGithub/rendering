@@ -4,6 +4,7 @@ TODO:
 * Measure in home machine
 * https://jacco.ompf2.com/2022/04/18/how-to-build-a-bvh-part-2-faster-rays/ 
   Low hanging fruit
+* TODO: add signposts and learn how to profile with instrument
 
 ## Performance
 Apple M2 Max
