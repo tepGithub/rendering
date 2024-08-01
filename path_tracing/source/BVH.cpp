@@ -7,6 +7,19 @@ using namespace Math;
 static constexpr float kLargeNumber = 1e30f;
 
 ///////////////////////////////////////////////////////////////////////////////
+// Profiling
+///////////////////////////////////////////////////////////////////////////////
+#ifdef BVH_ENABLE_PROFILING
+    #define IF_PROFILING(x) x
+#else
+    #define IF_PROFILING(x)
+#endif
+
+// Reorder nodes front-to-back to improve likelihood of early outs
+#define INTERSECTION_REORDER_NODES
+
+
+///////////////////////////////////////////////////////////////////////////////
 // Item
 ///////////////////////////////////////////////////////////////////////////////
 static float3 getAabbMin(const BVH::Item& item)
@@ -140,6 +153,10 @@ BVH::BVH(const Item* items, uint32_t _itemCount)
     updateNodeBounds(root);
 
     subdivideNode(root);
+
+#ifdef INTERSECTION_REORDER_NODES
+    IF_PROFILING(stats.reorderNodes = true);
+#endif
 }
 
 // partition items in node into two partition: partition0 and partition1.
@@ -225,6 +242,7 @@ void BVH::subdivideNode(BVHNode& node)
 
 void BVH::intersect(Math::Ray& ray, BVHNode& node)
 {
+    IF_PROFILING(stats.intersectRayAabbCount++);
     if (intersectRayAabb(ray, node.aabbMin, node.aabbMax) == Ray::kInf)
         return;
 
@@ -235,6 +253,7 @@ void BVH::intersect(Math::Ray& ray, BVHNode& node)
             const Item& item = getItem(node.firstItemRef() + i);
             intersectRayTri(ray, item);
         }
+        IF_PROFILING(stats.intersectRayTriCount += node.itemCount);
     }
     else
     {
@@ -246,12 +265,11 @@ void BVH::intersect(Math::Ray& ray, BVHNode& node)
 
 void BVH::intersect(Math::Ray& ray)
 {
-#if 1
-    intersect(ray, nodePool[rootNodeIndex]);
-#else
+#ifdef INTERSECTION_REORDER_NODES
     BVHNode* node = &nodePool[rootNodeIndex];
 
     // check if we hit root node aabb at all
+    IF_PROFILING(stats.intersectRayAabbCount++);
     if (intersectRayAabb(ray, node->aabbMin, node->aabbMax) == Ray::kInf)
         return;
 
@@ -267,6 +285,7 @@ void BVH::intersect(Math::Ray& ray)
                 const Item& item = getItem(node->firstItemRef() + i);
                 intersectRayTri(ray, item);
             }
+            IF_PROFILING(stats.intersectRayTriCount += node->itemCount);
             
             if (stackPtr == 0)
                 break;
@@ -279,8 +298,10 @@ void BVH::intersect(Math::Ray& ray)
             static_assert(BVHNode::kChildCount == 2);
             BVHNode* child0 = &nodePool[node->firstChild()];
             BVHNode* child1 = &nodePool[node->firstChild() + 1];
+
             float dist0 = intersectRayAabb(ray, child0->aabbMin, child0->aabbMax);
             float dist1 = intersectRayAabb(ray, child1->aabbMin, child1->aabbMax);
+            IF_PROFILING(stats.intersectRayAabbCount += 2);
 
             if (dist0 > dist1)
             {
@@ -302,5 +323,7 @@ void BVH::intersect(Math::Ray& ray)
             }
         }
     }
+#else
+    intersect(ray, nodePool[rootNodeIndex]);
 #endif
 }

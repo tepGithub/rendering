@@ -72,6 +72,16 @@ void printRayPerSecond(uint32_t rayCount, int64_t durationMs)
     }
 }
 
+inline void printBVHStats(const BVHStats& stats)
+{
+#ifdef BVH_ENABLE_PROFILING
+    std::cout << "BVH stats:\n";
+    std::cout << "  reorderNodes: " << (stats.reorderNodes ? "true" : "false") << "\n";
+    std::cout << "  intersectRayAabbCount: " << stats.intersectRayAabbCount << "\n";
+    std::cout << "  intersectRayTriCount: " << stats.intersectRayTriCount << "\n";
+#endif
+}
+
 int main()
 {    
     initScene();
@@ -135,6 +145,10 @@ int main()
         std::cout << "raytracing: " << durationMs << " ms.\n";
 
         printRayPerSecond(img.width * img.height, durationMs);
+
+    #ifdef BVH_ENABLE_PROFILING
+        printBVHStats(bvh.getStats());
+    #endif
     }
 
     img.save("output.png");

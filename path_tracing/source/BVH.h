@@ -11,6 +11,13 @@
 #include <vector>
 #include <cassert>
 
+///////////////////////////////////////////////////////////////////////////////
+// Options
+///////////////////////////////////////////////////////////////////////////////
+
+// Get statistics about BVH construction and performance
+#define BVH_ENABLE_PROFILING
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Node
@@ -44,6 +51,23 @@ public:
 };
 static_assert(sizeof(BVHNode) == 32);
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Stats
+///////////////////////////////////////////////////////////////////////////////
+
+struct BVHStats
+{
+    bool reorderNodes = false;
+    uint32_t intersectRayAabbCount = 0;
+    uint32_t intersectRayTriCount = 0;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+// BVH
+///////////////////////////////////////////////////////////////////////////////
+
 class BVH
 {
 public:
@@ -66,7 +90,11 @@ private:
     // nodes
     NodePool nodePool;
     uint32_t rootNodeIndex;
-    //uint32_t nodeCount;
+
+#ifdef BVH_ENABLE_PROFILING
+    // stats
+    BVHStats stats;
+#endif
 
     uint32_t allocNode() { uint32_t nodeIndex = uint32_t(nodePool.size()); nodePool.emplace_back(); return nodeIndex; }
     void updateNodeBounds(BVHNode& node);    
@@ -78,4 +106,8 @@ public:
     BVH(const Item* items, uint32_t itemCount);
 
     void intersect(Math::Ray& ray);
+
+#ifdef BVH_ENABLE_PROFILING
+    const BVHStats getStats() const { return stats;}
+#endif
 };
