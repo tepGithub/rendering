@@ -5,6 +5,8 @@ project(path_tracing)
 add_executable(path_tracing)
 
 set(HEADERS
+    source/Core/Assert.h
+
     source/Image/Image.h
     source/Image/stb_image.h
     source/Image/stb_image_write.h
